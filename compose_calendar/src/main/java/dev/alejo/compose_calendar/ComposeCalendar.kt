@@ -15,8 +15,10 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import dev.alejo.compose_calendar.component.CalendarBody
 import dev.alejo.compose_calendar.component.CalendarHeader
+import dev.alejo.compose_calendar.component.CompactCalendarContent
 import dev.alejo.compose_calendar.util.CalendarColors
 import dev.alejo.compose_calendar.util.CalendarDefaults
 import dev.alejo.compose_calendar.util.buildMonthDays
@@ -51,6 +53,9 @@ internal val CalendarDateSaver = Saver<LocalDate, String>(
  * @param isContentClickable Flag that enables or disables clicking on individual day cells.
  * @param onPreviousMonthClick Lambda invoked when the user navigates to the previous month.
  * @param onNextMonthClick Lambda invoked when the user navigates to the next month.
+ * @param layout Compact month picker or the original Classic event-cell layout.
+ * @param initialSelectedDate Initially highlighted date; subsequent clicks update and save the selection.
+ * @param locale Locale used by the compact month and weekday labels.
  */
 
 @Composable
@@ -66,7 +71,10 @@ fun <T> ComposeCalendar(
     indicatorLayout: CalendarDefaults.IndicatorLayout = CalendarDefaults.IndicatorLayout.Row,
     isContentClickable: Boolean = true,
     onPreviousMonthClick: (LocalDate) -> Unit = {},
-    onNextMonthClick: (LocalDate) -> Unit = {}
+    onNextMonthClick: (LocalDate) -> Unit = {},
+    layout: CalendarDefaults.Layout = CalendarDefaults.Layout.Compact,
+    initialSelectedDate: LocalDate? = LocalDate.now(),
+    locale: Locale = Locale.getDefault()
 ) {
     var currentMonth by rememberSaveable(stateSaver = CalendarDateSaver) {
         mutableStateOf(initDate)
@@ -74,8 +82,13 @@ fun <T> ComposeCalendar(
     val currentYearMonth = YearMonth.from(currentMonth)
     val isPreviousButtonEnable = currentYearMonth > YearMonth.from(LocalDate.MIN)
     val isNextButtonEnable = currentYearMonth < YearMonth.from(LocalDate.MAX)
-    val days = remember(currentYearMonth, firstDayOfWeek) {
-        buildMonthDays(currentYearMonth, firstDayOfWeek)
+    var selectedEpochDay by rememberSaveable { mutableStateOf(initialSelectedDate?.toEpochDay()) }
+    val selectDay: (LocalDate, List<CalendarEvent<T>>) -> Unit = { date, dayEvents ->
+        selectedEpochDay = date.toEpochDay()
+        onDayClick(date, dayEvents)
+    }
+    val days = remember(currentYearMonth, firstDayOfWeek, layout) {
+        buildMonthDays(currentYearMonth, firstDayOfWeek, layout == CalendarDefaults.Layout.Compact)
     }
     val currentMonthEvents by remember(events, currentYearMonth) {
         derivedStateOf {
@@ -90,38 +103,72 @@ fun <T> ComposeCalendar(
                 color = calendarColors.backgroundColor,
                 shape = RoundedCornerShape(CalendarDefaults.Dimens.Default)
             )
-            .padding(CalendarDefaults.Dimens.Default),
-        verticalArrangement = Arrangement.spacedBy(CalendarDefaults.Dimens.Default)
+            .padding(
+                start = CalendarDefaults.Dimens.Default,
+                top = CalendarDefaults.Dimens.Default,
+                end = CalendarDefaults.Dimens.Default,
+                bottom = if (layout == CalendarDefaults.Layout.Compact) 4.dp else CalendarDefaults.Dimens.Default
+            ),
+        verticalArrangement = Arrangement.spacedBy(
+            if (layout == CalendarDefaults.Layout.Compact) CalendarDefaults.Dimens.None else CalendarDefaults.Dimens.Default
+        )
     ) {
-        CalendarHeader(
-            currentMonth = currentMonth,
-            calendarColors = calendarColors,
-            firstDayOfWeek = firstDayOfWeek,
-            isPreviousButtonEnable = isPreviousButtonEnable,
-            isNextButtonEnable = isNextButtonEnable,
-            onPreviousMonthClick = {
-                if (isPreviousButtonEnable) {
+        if (layout == CalendarDefaults.Layout.Compact) {
+            CompactCalendarContent(
+                month = currentYearMonth,
+                days = days,
+                selectedDate = selectedEpochDay?.let(LocalDate::ofEpochDay),
+                events = currentMonthEvents,
+                firstDayOfWeek = firstDayOfWeek,
+                locale = locale,
+                colors = calendarColors,
+                isContentClickable = isContentClickable,
+                previousEnabled = isPreviousButtonEnable,
+                nextEnabled = isNextButtonEnable,
+                onPreviousMonthClick = {
                     currentMonth = currentMonth.minusMonths(1)
                     onPreviousMonthClick(currentMonth)
-                }
-            },
-            onNextMonthClick = {
-                if (isNextButtonEnable) {
+                },
+                onNextMonthClick = {
                     currentMonth = currentMonth.plusMonths(1)
                     onNextMonthClick(currentMonth)
-                }
-            },
-        )
-        CalendarBody(
-            events = currentMonthEvents,
-            days = days,
-            onDayClick = onDayClick,
-            eventIndicator = eventIndicator,
-            maxIndicators = maxIndicators,
-            indicatorLayout = indicatorLayout,
-            calendarColors = calendarColors,
-            isContentClickable = isContentClickable
-        )
+                },
+                onDayClick = selectDay,
+                eventIndicator = eventIndicator,
+                maxIndicators = maxIndicators,
+                indicatorLayout = indicatorLayout
+            )
+        } else {
+            CalendarHeader(
+                currentMonth = currentMonth,
+                calendarColors = calendarColors,
+                firstDayOfWeek = firstDayOfWeek,
+                isPreviousButtonEnable = isPreviousButtonEnable,
+                isNextButtonEnable = isNextButtonEnable,
+                onPreviousMonthClick = {
+                    if (isPreviousButtonEnable) {
+                        currentMonth = currentMonth.minusMonths(1)
+                        onPreviousMonthClick(currentMonth)
+                    }
+                },
+                onNextMonthClick = {
+                    if (isNextButtonEnable) {
+                        currentMonth = currentMonth.plusMonths(1)
+                        onNextMonthClick(currentMonth)
+                    }
+                },
+            )
+            CalendarBody(
+                events = currentMonthEvents,
+                days = days,
+                onDayClick = selectDay,
+                eventIndicator = eventIndicator,
+                maxIndicators = maxIndicators,
+                indicatorLayout = indicatorLayout,
+                calendarColors = calendarColors,
+                isContentClickable = isContentClickable
+            )
+        }
     }
 }
 
@@ -144,6 +191,9 @@ fun <T> ComposeCalendar(
  * @param isContentClickable Flag that enables or disables clicking on individual day cells.
  * @param onPreviousMonthClick Lambda invoked when the user navigates to the previous month.
  * @param onNextMonthClick Lambda invoked when the user navigates to the next month.
+ * @param layout Compact month picker or the original Classic event-cell layout.
+ * @param initialSelectedDate Initially highlighted date; subsequent clicks update and save the selection.
+ * @param locale Locale used by the compact month and weekday labels.
  */
 
 @Composable
@@ -159,7 +209,10 @@ fun SimpleComposeCalendar(
     indicatorLayout: CalendarDefaults.IndicatorLayout = CalendarDefaults.IndicatorLayout.Row,
     isContentClickable: Boolean = true,
     onPreviousMonthClick: (LocalDate) -> Unit = {},
-    onNextMonthClick: (LocalDate) -> Unit = {}
+    onNextMonthClick: (LocalDate) -> Unit = {},
+    layout: CalendarDefaults.Layout = CalendarDefaults.Layout.Compact,
+    initialSelectedDate: LocalDate? = LocalDate.now(),
+    locale: Locale = Locale.getDefault()
 ) {
     val calendarEvents by remember(events) {
         derivedStateOf { events.map { CalendarEvent<Unit>(date = it) } }
@@ -178,6 +231,9 @@ fun SimpleComposeCalendar(
         maxIndicators = maxIndicators,
         isContentClickable = isContentClickable,
         onPreviousMonthClick = onPreviousMonthClick,
-        onNextMonthClick = onNextMonthClick
+        onNextMonthClick = onNextMonthClick,
+        layout = layout,
+        initialSelectedDate = initialSelectedDate,
+        locale = locale
     )
 }

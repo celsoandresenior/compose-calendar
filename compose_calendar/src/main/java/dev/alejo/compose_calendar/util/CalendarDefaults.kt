@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.dp
  */
 
 object CalendarDefaults {
+    /** Compact matches the minimal month picker; Classic retains the event-cell layout. */
+    enum class Layout { Compact, Classic }
+
 
     /**
      * Defines the maximum number of event indicators to display within a calendar day cell.
@@ -107,6 +110,9 @@ object CalendarDefaults {
         navigationDisableContentColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
         eventBackgroundColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
         eventContentColor: Color = MaterialTheme.colorScheme.onTertiaryContainer,
+        selectedBackgroundColor: Color = Color(0xFFFF7F0E),
+        selectedContentColor: Color = Color.White,
+        inactiveContentColor: Color = contentColor.copy(alpha = 0.28f),
     ): CalendarColors = CalendarColors(
         backgroundColor = backgroundColor,
         contentColor = contentColor,
@@ -117,7 +123,10 @@ object CalendarDefaults {
         navigationDisableContainerColor = navigationDisableContainerColor,
         navigationDisableContentColor = navigationDisableContentColor,
         eventBackgroundColor = eventBackgroundColor,
-        eventContentColor = eventContentColor
+        eventContentColor = eventContentColor,
+        selectedBackgroundColor = selectedBackgroundColor,
+        selectedContentColor = selectedContentColor,
+        inactiveContentColor = inactiveContentColor
     )
 }
 
@@ -150,5 +159,8 @@ data class CalendarColors(
     val navigationDisableContainerColor: Color,
     val navigationDisableContentColor: Color,
     val eventBackgroundColor: Color,
-    val eventContentColor: Color
+    val eventContentColor: Color,
+    val selectedBackgroundColor: Color = Color(0xFFFF7F0E),
+    val selectedContentColor: Color = Color.White,
+    val inactiveContentColor: Color = contentColor.copy(alpha = 0.28f)
 )

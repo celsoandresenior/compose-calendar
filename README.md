@@ -71,6 +71,35 @@ With an emulator running, also run:
 The regression suite covers weekday alignment, leap years, historical and extreme dates,
 event updates, indicator positions, navigation limits and selected-month restoration.
 
+## Compact layout and day clicks
+
+![Compact calendar](img/compact-calendar.png)
+
+The default layout is a compact month picker with plain navigation arrows, muted dates from the
+previous month and an orange circle around the selected day. Pass
+`layout = CalendarDefaults.Layout.Classic` to retain the original event-cell layout.
+
+```kotlin
+ComposeCalendar(
+    events = events,
+    firstDayOfWeek = DayOfWeek.SUNDAY,
+    locale = Locale.forLanguageTag("pt-BR"),
+    initialSelectedDate = LocalDate.now(),
+    onDayClick = { date, dayEvents ->
+        // date is a LocalDate; dayEvents contains every CalendarEvent for this date.
+        viewModel.selectDate(date)
+    }
+)
+```
+
+`SimpleComposeCalendar` offers the same callback with a `List<LocalDate>` instead of generic events.
+Clicking a current-month day updates the selection and calls `onDayClick`, even if the day has no
+events. Previous-month padding dates are not clickable. Setting `isContentClickable = false` disables
+day clicks and selection changes. Selection and the displayed month survive state restoration.
+`initialSelectedDate` is an initial value; set it to `null` to start without a selection.
+The compact layout supports existing custom event indicators. Selection colors can be customized
+with `selectedBackgroundColor` and `selectedContentColor` in `CalendarDefaults.calendarColors()`.
+
 ## Documentation
 
 ### SimpleComposeCalendar
@@ -93,7 +122,10 @@ fun SimpleComposeCalendar(
     indicatorLayout: CalendarDefaults.IndicatorLayout = CalendarDefaults.IndicatorLayout.Row,
     isContentClickable: Boolean = true,
     onPreviousMonthClick: (LocalDate) -> Unit = {},
-    onNextMonthClick: (LocalDate) -> Unit = {}
+    onNextMonthClick: (LocalDate) -> Unit = {},
+    layout: CalendarDefaults.Layout = CalendarDefaults.Layout.Compact,
+    initialSelectedDate: LocalDate? = LocalDate.now(),
+    locale: Locale = Locale.getDefault()
 )
 ```
 
@@ -143,7 +175,10 @@ fun <T> ComposeCalendar(
     indicatorLayout: CalendarDefaults.IndicatorLayout = CalendarDefaults.IndicatorLayout.Row,
     isContentClickable: Boolean = true,
     onPreviousMonthClick: (LocalDate) -> Unit = {},
-    onNextMonthClick: (LocalDate) -> Unit = {}
+    onNextMonthClick: (LocalDate) -> Unit = {},
+    layout: CalendarDefaults.Layout = CalendarDefaults.Layout.Compact,
+    initialSelectedDate: LocalDate? = LocalDate.now(),
+    locale: Locale = Locale.getDefault()
 )
 ```
 

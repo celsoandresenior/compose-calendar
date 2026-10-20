@@ -8,6 +8,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertHasNoClickAction
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -25,6 +28,58 @@ import java.util.Locale
 class CalendarRegressionTest {
     @get:Rule
     val compose = createComposeRule()
+
+    @Test
+    fun clickingDayUpdatesSelectionAndDeliversItsEvents() {
+        val day = LocalDate.of(2023, 2, 21)
+        var clickedDate: LocalDate? = null
+        var clickedEvents: List<CalendarEvent<String>> = emptyList()
+        val event = CalendarEvent("Meeting", day)
+        compose.setContent {
+            MaterialTheme {
+                ComposeCalendar(initDate = day.withDayOfMonth(1), initialSelectedDate = day.minusDays(1),
+                    firstDayOfWeek = java.time.DayOfWeek.SUNDAY, locale = Locale.forLanguageTag("pt-BR"),
+                    events = listOf(event), onDayClick = { date, events -> clickedDate = date; clickedEvents = events })
+            }
+        }
+        compose.onNodeWithText("Fevereiro").assertExists()
+        compose.onNodeWithText("20").assertIsSelected()
+        compose.onNodeWithText("21").performClick().assertIsSelected()
+        compose.onNodeWithText("20").assertIsNotSelected()
+        compose.runOnIdle {
+            assertEquals(day, clickedDate)
+            assertEquals(listOf(event), clickedEvents)
+        }
+    }
+
+    @Test
+    fun previousMonthDaysAndDisabledContentDoNotHaveClickActions() {
+        compose.setContent {
+            MaterialTheme {
+                SimpleComposeCalendar(initDate = LocalDate.of(2023, 2, 1),
+                    firstDayOfWeek = java.time.DayOfWeek.SUNDAY, isContentClickable = false)
+            }
+        }
+        compose.onNodeWithText("29").assertHasNoClickAction()
+        compose.onNodeWithText("20").assertHasNoClickAction()
+    }
+
+    @Test
+    fun selectedDaySurvivesRestorationAndMonthNavigation() {
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent {
+            MaterialTheme {
+                SimpleComposeCalendar(initDate = LocalDate.of(2023, 2, 1), initialSelectedDate = null)
+            }
+        }
+        compose.onNodeWithText("21").performClick()
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithText("21").assertIsSelected()
+        compose.onNodeWithContentDescription(nextMonthLabel()).performClick()
+        compose.onNodeWithText("21").assertIsNotSelected()
+        compose.onNodeWithContentDescription(previousMonthLabel()).performClick()
+        compose.onNodeWithText("21").assertIsSelected()
+    }
 
     @Test
     fun gridPassesDistinctPositionsForTwoEvents() {
