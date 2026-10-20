@@ -84,7 +84,7 @@ fun <T> CalendarDay(
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
@@ -221,7 +221,7 @@ internal fun <T> IndicatorGrid(
             2 -> {
                 items(itemsToShow.size) { index ->
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        indicator(itemsToShow[index], 1, events.size)
+                        indicator(itemsToShow[index], index, events.size)
                     }
                 }
             }

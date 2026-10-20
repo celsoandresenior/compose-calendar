@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,20 +29,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.alejo.compose_calendar.CalendarEvent
 import dev.alejo.compose_calendar.ComposeCalendar
 import dev.alejo.compose_calendar.SimpleComposeCalendar
 import dev.alejo.compose_calendar.util.CalendarDefaults
 import dev.alejo.composecalendar.ui.theme.ComposeCalendarTheme
-import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val viewModel = MainViewModel()
         setContent {
-            val state by viewModel.state.collectAsState()
+            val state by viewModel.state.collectAsStateWithLifecycle()
             ComposeCalendarTheme {
                 Scaffold { innerPadding ->
                     Calendar(Modifier.padding(innerPadding), state)
@@ -54,16 +56,14 @@ fun Calendar(modifier: Modifier = Modifier, state: CalendarState) {
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(start = 16.dp, end = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SimpleComposeCalendar(
             modifier = Modifier.padding(16.dp),
             events = state.simpleEvents,
-            onDayClick = { date, event ->
-                println(date.toString())
-                println(event.toString())
-            },
+            onDayClick = { _, _ -> },
             eventIndicator = { _, _, _ ->
                 IndicatorContent(Modifier.size(8.dp))
             }
@@ -86,54 +86,9 @@ fun Calendar(modifier: Modifier = Modifier, state: CalendarState) {
             maxIndicators = CalendarDefaults.IndicatorLimit.Three,
             indicatorLayout = CalendarDefaults.IndicatorLayout.Column,
             isContentClickable = false,
-            onPreviousMonthClick = { println("Prev") },
-            onNextMonthClick = { println("Next") }
         )
     }
 }
-
-private fun getListOfEvents() = listOf(
-    CalendarEvent(
-        data = MyData("Event 1"),
-        date = LocalDate.now()
-    ),
-    CalendarEvent(
-        data = MyData("Event 1"),
-        date = LocalDate.now().minusDays(20)
-    ),
-    CalendarEvent(
-        data = MyData("Event 2"),
-        date = LocalDate.now().minusDays(20)
-    ),
-    CalendarEvent(
-        data = MyData("Event 1"),
-        date = LocalDate.now().plusDays(1)
-    ),
-    CalendarEvent(
-        data = MyData("Event 2"),
-        date = LocalDate.now().plusDays(1)
-    ),
-    CalendarEvent(
-        data = MyData("Event 3"),
-        date = LocalDate.now().plusDays(1)
-    ),
-    CalendarEvent(
-        data = MyData("Event 4"),
-        date = LocalDate.now().plusDays(1)
-    ),
-    CalendarEvent(
-        data = MyData("Event 3"),
-        date = LocalDate.now().plusDays(4)
-    ),
-    CalendarEvent(
-        data = MyData("Event 4"),
-        date = LocalDate.now().plusDays(4)
-    ),
-    CalendarEvent(
-        data = MyData("Event 4"),
-        date = LocalDate.now().plusDays(4)
-    ),
-)
 
 data class MyData(val name: String)
 
@@ -145,10 +100,6 @@ fun IndicatorContent(modifier: Modifier = Modifier, color: Color = Color.Black) 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ComposeCalendarPreview() {
-    Calendar(
-        state = CalendarState(
-            events = getListOfEvents(),
-            simpleEvents = getListOfEvents().map { it.date }
-        )
-    )
+    val events = sampleEvents()
+    Calendar(state = CalendarState(events = events, simpleEvents = events.map { it.date }))
 }

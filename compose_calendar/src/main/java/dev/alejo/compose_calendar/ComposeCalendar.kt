@@ -11,6 +11,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -18,12 +19,17 @@ import dev.alejo.compose_calendar.component.CalendarBody
 import dev.alejo.compose_calendar.component.CalendarHeader
 import dev.alejo.compose_calendar.util.CalendarColors
 import dev.alejo.compose_calendar.util.CalendarDefaults
-import dev.alejo.compose_calendar.util.buildCalendarCache
+import dev.alejo.compose_calendar.util.buildMonthDays
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.WeekFields
 import java.util.Locale
+
+internal val CalendarDateSaver = Saver<LocalDate, String>(
+    save = { it.toString() },
+    restore = { LocalDate.parse(it) }
+)
 
 /**
  * Main composable function to render a fully featured calendar with event indicators.
@@ -55,41 +61,26 @@ fun <T> ComposeCalendar(
     onDayClick: (date: LocalDate, events: List<CalendarEvent<T>>) -> Unit = { _, _ -> },
     calendarColors: CalendarColors = CalendarDefaults.calendarColors(),
     firstDayOfWeek: DayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek,
-    eventIndicator: (@Composable (event: CalendarEvent<T>, position: Int, count: Int) -> Unit)?,
+    eventIndicator: (@Composable (event: CalendarEvent<T>, position: Int, count: Int) -> Unit)? = null,
     maxIndicators: CalendarDefaults.IndicatorLimit = CalendarDefaults.IndicatorLimit.Four,
     indicatorLayout: CalendarDefaults.IndicatorLayout = CalendarDefaults.IndicatorLayout.Row,
     isContentClickable: Boolean = true,
     onPreviousMonthClick: (LocalDate) -> Unit = {},
     onNextMonthClick: (LocalDate) -> Unit = {}
 ) {
-    val calendarCache = remember(firstDayOfWeek) {
-        mutableStateOf(buildCalendarCache(firstDayOfWeek))
+    var currentMonth by rememberSaveable(stateSaver = CalendarDateSaver) {
+        mutableStateOf(initDate)
     }
-    var currentMonth by remember { mutableStateOf(initDate) }
     val currentYearMonth = YearMonth.from(currentMonth)
-
-    val firstYearMonth = remember { calendarCache.value.keys.first() }
-    val lastYearMonth = remember { calendarCache.value.keys.last() }
-
-
-    val isPreviousButtonEnable by remember(currentYearMonth) {
-        derivedStateOf { currentYearMonth != firstYearMonth }
+    val isPreviousButtonEnable = currentYearMonth > YearMonth.from(LocalDate.MIN)
+    val isNextButtonEnable = currentYearMonth < YearMonth.from(LocalDate.MAX)
+    val days = remember(currentYearMonth, firstDayOfWeek) {
+        buildMonthDays(currentYearMonth, firstDayOfWeek)
     }
-    val isNextButtonEnable by remember(currentYearMonth) {
-        derivedStateOf { currentYearMonth != lastYearMonth }
-    }
-
-    val days = calendarCache.value[currentYearMonth] ?: emptyList()
-
-    val groupedEvents by remember(events) {
+    val currentMonthEvents by remember(events, currentYearMonth) {
         derivedStateOf {
-            events.groupBy { YearMonth.from(it.date) }
-                .mapValues { it.value.groupBy { event -> event.date } }
+            events.filter { YearMonth.from(it.date) == currentYearMonth }.groupBy { it.date }
         }
-    }
-
-    val currentMonthEvents by remember(groupedEvents, currentYearMonth) {
-        derivedStateOf { groupedEvents[currentYearMonth] ?: emptyMap() }
     }
 
     Column(
@@ -163,17 +154,20 @@ fun SimpleComposeCalendar(
     onDayClick: (date: LocalDate, events: List<LocalDate>) -> Unit = { _, _ -> },
     calendarColors: CalendarColors = CalendarDefaults.calendarColors(),
     firstDayOfWeek: DayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek,
-    eventIndicator: (@Composable (event: LocalDate, position: Int, count: Int) -> Unit)?,
+    eventIndicator: (@Composable (event: LocalDate, position: Int, count: Int) -> Unit)? = null,
     maxIndicators: CalendarDefaults.IndicatorLimit = CalendarDefaults.IndicatorLimit.Four,
     indicatorLayout: CalendarDefaults.IndicatorLayout = CalendarDefaults.IndicatorLayout.Row,
     isContentClickable: Boolean = true,
     onPreviousMonthClick: (LocalDate) -> Unit = {},
     onNextMonthClick: (LocalDate) -> Unit = {}
 ) {
+    val calendarEvents by remember(events) {
+        derivedStateOf { events.map { CalendarEvent<Unit>(date = it) } }
+    }
     ComposeCalendar<Unit>(
         modifier = modifier,
         initDate = initDate,
-        events = events.map { CalendarEvent(date = it) },
+        events = calendarEvents,
         onDayClick = { date, dayEvents -> onDayClick(date, dayEvents.map { it.date }) },
         calendarColors = calendarColors,
         firstDayOfWeek = firstDayOfWeek,

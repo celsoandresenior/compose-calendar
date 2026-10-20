@@ -27,10 +27,11 @@ fun NavigationButton(
     icon: ImageVector,
     enabled: Boolean,
     modifier: Modifier = Modifier,
-    calendarColors: CalendarColors
+    calendarColors: CalendarColors,
+    contentDescription: String? = null
 ) {
     Button(
-        modifier = Modifier
+        modifier = modifier
             .size(Dimens.ButtonSize)
             .clip(RoundedCornerShape(Dimens.Small)),
         enabled = enabled,
@@ -46,8 +47,8 @@ fun NavigationButton(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
-            modifier = modifier.size(Dimens.Default)
+            contentDescription = contentDescription,
+            modifier = Modifier.size(Dimens.Default)
         )
     }
 }

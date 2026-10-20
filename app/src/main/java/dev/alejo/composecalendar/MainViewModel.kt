@@ -12,53 +12,20 @@ class MainViewModel : ViewModel() {
     val state = _state.asStateFlow()
 
     init {
-        _state.value = CalendarState(
-            events = getListOfEvents(),
-            simpleEvents = getListOfEvents().map { it.date }
-        )
+        val events = sampleEvents()
+        _state.value = CalendarState(events = events, simpleEvents = events.map { it.date })
     }
-
-    private fun getListOfEvents() = listOf(
-        CalendarEvent(
-            data = MyData("Event 1"),
-            date = LocalDate.now()
-        ),
-        CalendarEvent(
-            data = MyData("Event 1"),
-            date = LocalDate.now().minusDays(20)
-        ),
-        CalendarEvent(
-            data = MyData("Event 2"),
-            date = LocalDate.now().minusDays(20)
-        ),
-        CalendarEvent(
-            data = MyData("Event 1"),
-            date = LocalDate.now().plusDays(1)
-        ),
-        CalendarEvent(
-            data = MyData("Event 2"),
-            date = LocalDate.now().plusDays(1)
-        ),
-        CalendarEvent(
-            data = MyData("Event 3"),
-            date = LocalDate.now().plusDays(1)
-        ),
-        CalendarEvent(
-            data = MyData("Event 4"),
-            date = LocalDate.now().plusDays(1)
-        ),
-        CalendarEvent(
-            data = MyData("Event 3"),
-            date = LocalDate.now().plusDays(4)
-        ),
-        CalendarEvent(
-            data = MyData("Event 4"),
-            date = LocalDate.now().plusDays(4)
-        ),
-        CalendarEvent(
-            data = MyData("Event 4"),
-            date = LocalDate.now().plusDays(4)
-        ),
-    )
-
 }
+
+internal fun sampleEvents(today: LocalDate = LocalDate.now()): List<CalendarEvent<MyData>> = listOf(
+    0L to "Event 1",
+    -20L to "Event 1",
+    -20L to "Event 2",
+    1L to "Event 1",
+    1L to "Event 2",
+    1L to "Event 3",
+    1L to "Event 4",
+    4L to "Event 3",
+    4L to "Event 4",
+    4L to "Event 4"
+).map { (offset, name) -> CalendarEvent(data = MyData(name), date = today.plusDays(offset)) }

@@ -11,67 +11,65 @@ interface for displaying calendar events focused on simplicity and material desi
 
 Made with ❤️ by <a target="_blank" href="https://jimmyplazas.dev">Jimmy Plazas</a>
 
+## Maintained fork
+
+This fork is maintained at [celsoandresenior/compose-calendar](https://github.com/celsoandresenior/compose-calendar).
+The original author and Apache 2.0 license are preserved.
+
+This update uses JDK 17, Gradle 8.14.5, AGP 8.13.2, Kotlin 2.3.21 and the Kotlin Compose compiler plugin.
+The demo targets Android API 36; the library still supports Android API 26 and later.
+Dependencies are resolved from Google Maven and Maven Central only.
+
+### Changes
+
+- Generate only the visible month and support the full `LocalDate` range.
+- Restore the selected month after activity recreation or process state restoration.
+- Correct indicator positions in the two-event grid layout.
+- Label navigation buttons for accessibility, with English and Portuguese resources.
+- Allow the calendar inside scrolling containers and make the demo scroll on smaller screens.
+- Keep the demo ViewModel in the activity store and collect state with its lifecycle.
+- Remove the extended icon pack, unused dependencies and duplicate sample data.
+- Verify the Gradle distribution using its official SHA-256 checksum.
+
+`initDate` sets the initial month. Navigation state is owned by the component and restored independently of subsequent recompositions.
+Changing the starting month intentionally requires recreating the component, for example with `key(newDate) { ... }`.
+`eventIndicator` now defaults to `null`; day backgrounds still identify dates containing events.
+
 ## Getting Started
 
-Before to start, it is important you to know that this library works with `minSdk = 26`.
+No release of this fork has been published yet. To use the updated code, clone this repository and
+include `:compose_calendar` as an Android library module, or publish it to your local Maven repository:
 
-To integrate the Compose Calendar library into your Android app, follow the next steps:
+```sh
+./gradlew :compose_calendar:publishReleasePublicationToMavenLocal
+```
 
-1. Add your MavenCentral and Jitpack to you `settings.gradle.kts` file
+For local Maven consumption, add `mavenLocal()` to the consuming project's repositories and use:
 
 ```kotlin
-dependencyResolutionManagement {
-    repositories {
-        google {
-            mavenContent {
-                includeGroupAndSubgroups("androidx")
-                includeGroupAndSubgroups("com.android")
-                includeGroupAndSubgroups("com.google")
-            }
-        }
-        mavenCentral()
-
-        // 👇 Aquí agregas jitpack
-        maven(url = "https://jitpack.io") {
-            content {
-                includeGroupByRegex("com\\.github\\..*")
-            }
-        }
-    }
-}
+implementation("io.github.celsoandresenior:compose_calendar:3.2.0-SNAPSHOT")
 ```
 
-If you are using an older versión of Android Studio, then add MavenCentral and Jitpack to your root
-build.gradle file
+The module retains its `dev.alejo.compose_calendar` package names for source compatibility.
+The original project's published artifacts remain under `com.github.jimmyplazas:compose-calendar`;
+those artifacts do not include changes from this fork.
 
-```
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-        maven { url = uri(path = "https://jitpack.io") }
-    }
-}
-```
-2. Add the dependency in your project `libs.versions.toml` file
+## Building and testing
 
-```toml
-[versions]
-composeCalendar = "{latest_version}"
+Install Android SDK Platform 36 and Build Tools 35.0.0, and use JDK 17 or a compatible newer JDK.
 
-[libraries]
-compose-calendar = { module = "com.github.jimmyplazas:compose-calendar", version.ref = "composeCalendar" }
+```sh
+./gradlew :app:assembleDebug :app:testDebugUnitTest :compose_calendar:testDebugUnitTest :app:lintDebug :compose_calendar:lintDebug
 ```
 
-And then add the library to your `build.gradle.kts` file
+With an emulator running, also run:
 
-```kotlin
-implementation(libs.compose.calendar)
+```sh
+./gradlew :compose_calendar:connectedDebugAndroidTest
 ```
 
-Replace the `{latest_version}`
-with [![GitHub Release](https://img.shields.io/github/v/release/jimmyplazas/compose-calendar?label=ComposeCalendar&sort=semver)](https://github.com/jimmyplazas/compose-calendar/releases/latest)
+The regression suite covers weekday alignment, leap years, historical and extreme dates,
+event updates, indicator positions, navigation limits and selected-month restoration.
 
 ## Documentation
 
@@ -90,12 +88,12 @@ fun SimpleComposeCalendar(
     onDayClick: (date: LocalDate, events: List<LocalDate>) -> Unit = { _, _ -> },
     calendarColors: CalendarColors = CalendarDefaults.calendarColors(),
     firstDayOfWeek: DayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek,
-    eventIndicator: (@Composable (event: LocalDate, position: Int, count: Int) -> Unit)?,
+    eventIndicator: (@Composable (event: LocalDate, position: Int, count: Int) -> Unit)? = null,
     maxIndicators: CalendarDefaults.IndicatorLimit = CalendarDefaults.IndicatorLimit.Four,
     indicatorLayout: CalendarDefaults.IndicatorLayout = CalendarDefaults.IndicatorLayout.Row,
     isContentClickable: Boolean = true,
-    onPreviousMonthClick: () -> Unit = {},
-    onNextMonthClick: () -> Unit = {}
+    onPreviousMonthClick: (LocalDate) -> Unit = {},
+    onNextMonthClick: (LocalDate) -> Unit = {}
 )
 ```
 
@@ -140,12 +138,12 @@ fun <T> ComposeCalendar(
     onDayClick: (date: LocalDate, events: List<CalendarEvent<T>>) -> Unit = { _, _ -> },
     calendarColors: CalendarColors = CalendarDefaults.calendarColors(),
     firstDayOfWeek: DayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek,
-    eventIndicator: (@Composable (event: CalendarEvent<T>, position: Int, count: Int) -> Unit)?,
+    eventIndicator: (@Composable (event: CalendarEvent<T>, position: Int, count: Int) -> Unit)? = null,
     maxIndicators: CalendarDefaults.IndicatorLimit = CalendarDefaults.IndicatorLimit.Four,
     indicatorLayout: CalendarDefaults.IndicatorLayout = CalendarDefaults.IndicatorLayout.Row,
     isContentClickable: Boolean = true,
-    onPreviousMonthClick: () -> Unit = {},
-    onNextMonthClick: () -> Unit = {}
+    onPreviousMonthClick: (LocalDate) -> Unit = {},
+    onNextMonthClick: (LocalDate) -> Unit = {}
 )
 ```
 

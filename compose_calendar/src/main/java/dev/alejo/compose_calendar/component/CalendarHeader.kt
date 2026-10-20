@@ -9,15 +9,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import dev.alejo.compose_calendar.R
 import dev.alejo.compose_calendar.util.CalendarColors
 import dev.alejo.compose_calendar.util.CalendarDefaults.Dimens
 import java.time.DayOfWeek
@@ -121,13 +123,15 @@ fun MonthAndNavigation(
             )
             NavigationButton(
                 onClick = onPreviousMonthClick,
-                icon = Icons.Default.ArrowBackIosNew,
+                icon = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = stringResource(R.string.previous_month),
                 enabled = isPreviousButtonEnable,
                 calendarColors = calendarColors
             )
             NavigationButton(
                 onClick = onNextMonthClick,
-                icon = Icons.Default.ArrowForwardIos,
+                icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = stringResource(R.string.next_month),
                 enabled = isNextButtonEnable,
                 calendarColors = calendarColors
             )
